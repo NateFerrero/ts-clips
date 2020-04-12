@@ -14,20 +14,20 @@ interface ClipContext {
   swaps: Map<Clip<any>, Clip<any>>
 }
 
-let create = 0
-
 export const clip = <TClip extends Function>(
   body: TClip,
   clipContexts: ClipContext[] = []
 ): Clip<OmitThisParameter<TClip>> => {
-  console.log('CREATE < 36 ? ', create++)
+  const memo = createCache()
 
   const seek = <TSeek extends Function>(search: Clip<TSeek>): Clip<TSeek> =>
-    (
-      findInArray<ClipContext, Clip<TSeek>>(clipContexts, (context) =>
-        context.swaps.get(search)
-      ) ?? search
-    ).extend(clipContexts)
+    memo(search, () =>
+      (
+        findInArray<ClipContext, Clip<TSeek>>(clipContexts, (context) =>
+          context.swaps.get(search)
+        ) ?? search
+      ).extend(clipContexts)
+    )
 
   const newClip: any = (...args: any[]) => {
     return body.apply(seek, args)
@@ -65,5 +65,19 @@ function findInArray<T, U>(array: T[], search: (map: T) => U | undefined) {
     if (value) {
       return value
     }
+  }
+}
+
+function createCache() {
+  const values = new WeakMap()
+
+  return <T extends object, U>(search: T, generate: () => U) => {
+    const result = values.get(search)
+    if (result) {
+      return result
+    }
+    const newResult = generate()
+    values.set(search, newResult)
+    return newResult
   }
 }

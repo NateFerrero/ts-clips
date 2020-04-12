@@ -21,33 +21,29 @@ const fixedAdd = clip(function (this: Seek, one: string, two: string) {
   return `${initial} + ${one} + ${two} = ${initial + parseInt(one) + parseInt(two)}`
 })
 
-const main2 = main.swap(add, fixedAdd)
+const main0 = main.swap(add, fixedAdd)
 
-const main3 = main.swap(
+const main100 = main.swap(
   add,
   fixedAdd.swap(initialValue, function () {
     return 100
   })
 )
 
-const main4 = main2.swap(initialValue, function () {
+const main200 = main0.swap(initialValue, function () {
   return 200
 })
 
-const main5 = main3.swap(initialValue, function () {
-  return 300
+const main300 = main100.swap(initialValue, function () {
+  return 300 // this overrides the swap done in main100
 })
 
 main() // 45
 
-main2() // 0 + 4 + 5 = 9
+main0() // 0 + 4 + 5 = 9
 
-main3() // 100 + 4 + 5 = 109
+main100() // 100 + 4 + 5 = 109
 
-main4()
+main200() // 200 + 4 + 5 = 209
 
-main5()
-main5()
-main5()
-main5()
-main5()
+main300() // 300 + 4 + 5 = 309
