@@ -1,5 +1,5 @@
 {
-  "name": "clips",
+  "name": "ts-clips",
   "version": "0.0.1",
   "description": "Clips for TypeScript",
   "main": "index.js",
