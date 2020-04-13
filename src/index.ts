@@ -1,26 +1,28 @@
-export type Clip<TClip extends Function> = TClip & {
+export type Clip<TClip extends (...args: any[]) => any> = TClip & {
   extend(contexts: ClipContext[]): Clip<TClip>
-  swap<TSwap extends Function, TClipSwap extends Clip<TSwap>>(
+  swap<TSwap extends (...args: any[]) => any, TClipSwap extends Clip<TSwap>>(
     current: TClipSwap,
     replacement: TClipSwap | TSwap
   ): Clip<TClip>
 }
 
-export interface Seek {
-  <TClip extends Function>(search: Clip<TClip>): Clip<TClip>
-}
+export type Seek = <TClip extends (...args: any[]) => any>(
+  search: Clip<TClip>
+) => Clip<TClip>
 
 interface ClipContext {
   swaps: Map<Clip<any>, Clip<any>>
 }
 
-export const clip = <TClip extends Function>(
+export const clip = <TClip extends (...args: any[]) => any>(
   body: TClip,
   clipContexts: ClipContext[] = []
 ): Clip<OmitThisParameter<TClip>> => {
   const memo = createCache()
 
-  const seek = <TSeek extends Function>(search: Clip<TSeek>): Clip<TSeek> =>
+  const seek = <TSeek extends (...args: any[]) => any>(
+    search: Clip<TSeek>
+  ): Clip<TSeek> =>
     memo(search, () =>
       (
         findInArray<ClipContext, Clip<TSeek>>(clipContexts, (context) =>
@@ -80,4 +82,33 @@ function createCache() {
     values.set(search, newResult)
     return newResult
   }
+}
+
+export type Slot<TClip extends (...args: any[]) => any> = TClip & {
+  eject(): Clip<TClip>
+  swap(replacement: TClip | Clip<TClip>): Clip<TClip>
+}
+
+export const slot = <TClip extends (...args: any[]) => any>(
+  initialClip: TClip
+): Slot<TClip> => {
+  let loadedClip = initialClip
+
+  const newSlot: any = (...args: any[]) => {
+    return loadedClip.apply(undefined, args)
+  }
+
+  newSlot.swap = (replaceClip: TClip) => {
+    const existingClip = loadedClip
+    loadedClip = replaceClip
+    return existingClip
+  }
+
+  newSlot.eject = (): TClip => {
+    const existingClip = loadedClip
+    loadedClip = initialClip
+    return existingClip
+  }
+
+  return newSlot
 }
